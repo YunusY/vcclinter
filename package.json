@@ -12,16 +12,106 @@
         "Linters"
     ],
     "activationEvents": [
-        "onCommand:extension.vccRun",
-        "onCommand:extension.vccWatch",
-        "onCommand:extension.vccWatchStop"
+        "onCommand:extension.vccVerify",
+        "onCommand:extension.vccVerifyWithoutIncludes",
+        "onCommand:extension.vccVerifyThis",
+        "onCommand:extension.vccReVerify",
+        "onCommand:extension.vccCustomVerify"
     ],
     "main": "./out/src/extension",
     "contributes": {
+        "configuration": {
+            "type": "object",
+            "title": "VCClinter configuration",
+            "properties": {
+                "vcclinter.usebvp": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "create counter example for boogie verification debugger"
+                }
+            }
+        },
+        "menus": {
+            "editor/context": [
+                {
+                    "command": "extension.vccVerify",
+                    "when": "resourceLangId == c",
+                    "group": "0_vcc@1"
+                },
+                {
+                    "command": "extension.vccVerifyWithoutIncludes",
+                    "when": "resourceLangId == c",
+                    "group": "0_vcc@2"
+                },
+                {
+                    "command": "extension.vccVerifyThis",
+                    "when": "resourceLangId == c",
+                    "group": "0_vcc@3"
+                },
+                {
+                    "command": "extension.vccReVerify",
+                    "when": "resourceLangId == c",
+                    "group": "0_vcc@4"
+                },
+                {
+                    "command": "extension.vccCustomVerify",
+                    "when": "resourceLangId == c",
+                    "group": "0_vcc@5"
+                },
+               {
+                    "command": "extension.vccVerify",
+                    "when": "resourceLangId == cpp",
+                    "group": "0_vcc@1"
+                },
+                {
+                    "command": "extension.vccVerifyWithoutIncludes",
+                    "when": "resourceLangId == cpp",
+                    "group": "0_vcc@2"
+                },
+                {
+                    "command": "extension.vccVerifyThis",
+                    "when": "resourceLangId == cpp",
+                    "group": "0_vcc@3"
+                },
+                {
+                    "command": "extension.vccReVerify",
+                    "when": "resourceLangId == cpp",
+                    "group": "0_vcc@4"
+                },
+                {
+                    "command": "extension.vccCustomVerify",
+                    "when": "resourceLangId == cpp",
+                    "group": "0_vcc@5"
+                }
+            ]
+        },
+        "keybindings": [
+            {
+                "command": "extension.vccVerify",
+                "key": "ctrl+f1",
+                "when": "editorTextFocus"
+            }
+        ],
         "commands": [
             {
-                "command": "extension.vccRun",
-                "title": "VCC Run"
+                "command": "extension.vccVerify",
+                "title": "VCC Verify"
+            },
+             {
+                "command": "extension.vccVerifyWithoutIncludes",
+                "title": "VCC Verify without includes"
+            },
+            {
+                "command": "extension.vccVerifyThis",
+                "title": "VCC Verify This"
+            },
+            {
+                "command": "extension.vccReVerify",
+                "title": "VCC Re-Verify"
+            },
+            {
+                "command": "extension.vccCustomVerify",
+                "title": "VCC Custom Verify"
             },
             {
                 "command": "extension.vccWatch",

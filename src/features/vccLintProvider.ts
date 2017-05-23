@@ -6,61 +6,86 @@ import ChildProcess = cp.ChildProcess;
 
 import * as vscode from 'vscode';
 
-export default class VCCLintingProvider implements vscode.CodeActionProvider {
+export default class VCCLintingProvider {
 
 	private static commandId: string = 'vcc.runCodeAction';
 	private command: vscode.Disposable;
 	private diagnosticCollection: vscode.DiagnosticCollection;
+	private outputChannel: vscode.OutputChannel;
+	private saveWatcher: vscode.Disposable;
+	private changeWatcher: vscode.Disposable;
+	public lastParameters: string[];
 
-	public activate(subscriptions: vscode.Disposable[]) {
-		this.command = vscode.commands.registerCommand(VCCLintingProvider.commandId, this.runCodeAction, this);
+	constructor(subscriptions: vscode.Disposable[]) {
 		subscriptions.push(this);
 		this.diagnosticCollection = vscode.languages.createDiagnosticCollection();
-
-		vscode.workspace.onDidOpenTextDocument(this.doHlint, this, subscriptions);
-		vscode.workspace.onDidSaveTextDocument(this.doHlint, this);
-		vscode.workspace.onDidCloseTextDocument((textDocument) => {
-			this.diagnosticCollection.delete(textDocument.uri);
-		}, null, subscriptions);
-
-		// lint all open c documents
-		vscode.workspace.textDocuments.forEach(this.doHlint, this);
+		this.outputChannel = vscode.window.createOutputChannel("VCC");
+		this.changeWatcher = vscode.workspace.onDidChangeTextDocument(this.diagnosticCollection.clear, this);
 	}
 
+	public watch() {
+		this.saveWatcher = vscode.workspace.onDidSaveTextDocument(() => {
+			this.verify([''])
+		}, this);
+		this.verify(['']);
+	}
+
+	public stopWatch() {
+		this.saveWatcher.dispose();
+	}
 	public dispose(): void {
 		this.diagnosticCollection.clear();
 		this.diagnosticCollection.dispose();
-		this.command.dispose();
+		this.outputChannel.clear();
+		this.outputChannel.dispose();
+		this.changeWatcher.dispose();
+		if (this.saveWatcher != null) {
+			this.saveWatcher.dispose();
+		}
 	}
-
-	public doHlint(textDocument: vscode.TextDocument) {
-		console.log(textDocument.languageId);
-		if (textDocument.languageId !== 'cpp' && (textDocument.languageId !== 'c')) {
+	public reVerify() {
+		if (this.lastParameters != null) {
+			this.verify(this.lastParameters)
+		} else {
+			this.outputChannel.clear();
+			this.outputChannel.show(true);
+			this.outputChannel.append("You have never verified before...");
 			return;
 		}
 
-		let decoded = ''
-		let diagnostics: vscode.Diagnostic[] = [];
+	}
+	
+	public verify(parameters: string[]) {
+		let textDocument = vscode.window.activeTextEditor.document;
+		if (textDocument.languageId !== 'cpp' && (textDocument.languageId !== 'c')) {
+			return;
+		}
+		this.outputChannel.clear();
+		this.outputChannel.show(true);
+		this.lastParameters = parameters;
 
 		let options = vscode.workspace.rootPath ? { cwd: vscode.workspace.rootPath } : undefined;
-		let args = [textDocument.fileName];
-
+		let args = [textDocument.fileName].concat(parameters);
 		let childProcess = cp.spawn('vcc', args, options);
+		this.outputChannel.append('vcc ' + args + "\n");
+
 		childProcess.on('error', (error: Error) => {
 			// console.log("ERROR:" + error);
 			vscode.window.showInformationMessage(`Cannot vcc the c file.`);
 		});
+
+		let decoded = ''
 		if (childProcess.pid) {
 			childProcess.stdout.on('data', (data: Buffer) => {
 				decoded += data;
 			});
 			childProcess.stdout.on('end', () => {
 				var messages = decoded.split("\n");
-				console.log("fulltext: \n" + decoded, "textDocument: \n" + textDocument)
+				let diagnostics: vscode.Diagnostic[] = [];
 
 				messages.forEach(message => {
 					console.log(message);
-
+					this.outputChannel.append(message);
 					var ind = message.indexOf(".c(");
 					if (ind < 0) {
 						ind = message.indexOf(".h(");
@@ -93,30 +118,5 @@ export default class VCCLintingProvider implements vscode.CodeActionProvider {
 
 			});
 		}
-	}
-
-	public provideCodeActions(document: vscode.TextDocument, range: vscode.Range, context: vscode.CodeActionContext, token: vscode.CancellationToken): vscode.Command[] {
-		// let diagnostic: vscode.Diagnostic = context.diagnostics[0];
-		// return [{
-		// 	title: "Accept hlint suggestion",
-		// 	command: VCCLintingProvider.commandId,
-		// 	arguments: [document, diagnostic.range, diagnostic.message]
-		// }];
-		return null;
-	}
-
-	private runCodeAction(document: vscode.TextDocument, range: vscode.Range, message: string): any {
-		// let fromRegex: RegExp = /.*Replace:(.*)==>.*/g
-		// let fromMatch: RegExpExecArray = fromRegex.exec(message.replace(/\s/g, ''));
-		// let from = fromMatch[1];
-		// let to: string = document.getText(range).replace(/\s/g, '')
-		// if (from === to) {
-		// 	let newText = /.*==>\s(.*)/g.exec(message)[1]
-		// 	let edit = new vscode.WorkspaceEdit();
-		// 	edit.replace(document.uri, range, newText);
-		// 	return vscode.workspace.applyEdit(edit);
-		// } else {
-		// 	vscode.window.showErrorMessage("The suggestion was not applied because it is out of date. You might have tried to apply the same edit twice.");
-		// }
 	}
 }
