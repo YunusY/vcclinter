@@ -180,12 +180,7 @@ export default class VCCLintingProvider {
 
 		let decoded = ''
 		if (this.childProcess.pid) {
-this.childProcess.on('start', (error) => {
-				// console.log("ERROR:" + error);
-				this.lock = false;
-				vscode.window.showInformationMessage(`Cannot vcc the c file.`);
-				this.outputChannel.append(error);
-			});
+
 			this.childProcess.on('error', (error: Error) => {
 				// console.log("ERROR:" + error);
 				this.lock = false;
