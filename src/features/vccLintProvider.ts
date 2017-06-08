@@ -174,17 +174,25 @@ export default class VCCLintingProvider {
 			args.push("/i")
 		}
 		this.childProcess = cp.spawn('vcc', args, options);
-		this.outputChannel.append('vcc ' + args.toString().replace(/,/g," ") + "\n");
+		this.outputChannel.append('vcc ' + args.toString().replace(/,/g, " ") + "\n");
 
-		this.childProcess.on('error', (error: Error) => {
-			// console.log("ERROR:" + error);
-			this.lock = false;
-			vscode.window.showInformationMessage(`Cannot vcc the c file.`);
-			this.outputChannel.append(error.message);
-		});
+
 
 		let decoded = ''
-		if (true) {
+		if (this.childProcess.pid) {
+this.childProcess.on('start', (error) => {
+				// console.log("ERROR:" + error);
+				this.lock = false;
+				vscode.window.showInformationMessage(`Cannot vcc the c file.`);
+				this.outputChannel.append(error);
+			});
+			this.childProcess.on('error', (error: Error) => {
+				// console.log("ERROR:" + error);
+				this.lock = false;
+				vscode.window.showInformationMessage(`Cannot vcc the c file.`);
+				this.outputChannel.append(error.message);
+			});
+
 			this.childProcess.stdout.on('data', (data: Buffer) => {
 				decoded += data;
 			});
@@ -205,7 +213,7 @@ export default class VCCLintingProvider {
 					// 1 - path
 					// 2 - row
 					// 3 - col
-					// 4 - possible error
+					// 4 - possible errormessage
 					// 5 - possible errorword
 					// 6 - other possible errormessage
 					let result = regex.exec(message);
