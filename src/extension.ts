@@ -1,57 +1,66 @@
-import * as vscode from 'vscode';
+import { workspace, commands, window, InputBoxOptions, ExtensionContext, Disposable } from 'vscode';
 
 import VCCLintingProvider from './features/vccLintProvider';
 
-export function activate(context: vscode.ExtensionContext) {
-	console.log("ACTIVATED");
-	console.log(vscode.workspace.getConfiguration('vcc'));
-	console.log(vscode.workspace.getConfiguration('window'));
-	console.log(vscode.window.activeTextEditor.document.languageId)
-	
+export function activate(context: ExtensionContext) {
 	let linter = new VCCLintingProvider(context.subscriptions);
+	registerCommandListeners(linter, context.subscriptions);
+}
 
-	let disposable = vscode.commands.registerCommand('extension.vccVerify', function () {
-		linter.verify(['']);
-	});
-	context.subscriptions.push(disposable);
+function registerCommandListeners(linter: VCCLintingProvider, subscriptions: Disposable[]) {
+	subscriptions.push(commands.registerCommand('vcclinter.verify', function () {
+		linter.checkAutoSaveAndVerify([''])
+	}));
 
-	disposable = vscode.commands.registerCommand('extension.vccVerifyWithoutIncludes', function () {
-		linter.verify(['/ii']);
-	});
-	context.subscriptions.push(disposable);
+	subscriptions.push(commands.registerCommand('vcclinter.verifyWithoutIncludes', function () {
+		linter.checkAutoSaveAndVerify(['/ii']);
+	}));
 
-	disposable = vscode.commands.registerCommand('extension.vccVerifyThis', function () {
-		linter.verify(['/loc:' + vscode.window.activeTextEditor.document.fileName + ':' + ((+vscode.window.activeTextEditor.selection.active.line) + 1)]);
-	});
-	context.subscriptions.push(disposable);
+	subscriptions.push(commands.registerCommand('vcclinter.verifyThis', function () {
+		linter.checkAutoSaveAndVerify(['/loc:' + window.activeTextEditor.document.fileName + ':' + ((+window.activeTextEditor.selection.active.line) + 1)]);
+	}));
 
-	disposable = vscode.commands.registerCommand('extension.vccReVerify', function () {
+	subscriptions.push(commands.registerCommand('vcclinter.reVerify', function () {
 		linter.reVerify();
-	});
-	context.subscriptions.push(disposable);
+	}));
 
-	disposable = vscode.commands.registerCommand('extension.vccCustomVerify', function () {
-		let options: vscode.InputBoxOptions = {
+	subscriptions.push(commands.registerCommand('vcclinter.customVerify', function () {
+		let options: InputBoxOptions = {
 			prompt: "Enter your VCC parameters",    // <- Der Hilfstext der unter dem Eingabefeld erscheinen soll.
 			value: "/bvd",                                // <- Der Text der schon im Eingabefeld voreingestellt sein soll. REPLACE MIT CONFIG later
 			placeHolder: "VCC Parameters"                        // <- Ein Text, der ausgegraut im Eingabefeld angezeigt wird.
 		}
-		  vscode.window.showInputBox(options).then((input) => {
-			  linter.verify(input.split(" "))
-			});
+		window.showInputBox(options).then((input) => {
+			linter.checkAutoSaveAndVerify(input.split(" "), true)
+		});
 
-	});
-	context.subscriptions.push(disposable);
-
-
-	disposable = vscode.commands.registerCommand('extension.vccWatch', function () {
+	}));
+	subscriptions.push(commands.registerCommand('vcclinter.cancel', function () {
+		linter.cancel();
+	}));
+	subscriptions.push(commands.registerCommand('vcclinter.watch', function () {
 		linter.watch();
-	});
-	context.subscriptions.push(disposable);
+	}));
 
-	disposable = vscode.commands.registerCommand('extension.vccWatchStop', function () {
+	subscriptions.push(commands.registerCommand('vcclinter.watchStop', function () {
 		linter.stopWatch();
-	});
-	context.subscriptions.push(disposable);
+	}));
 
+	subscriptions.push(commands.registerCommand('vcclinter.showErrorModel', function (file) {
+		if (file == null) {
+
+			window.showInformationMessage('Command \'Show Error Model\' is not enabled in the current context.');
+		} else {
+			linter.showErrorModel(file.fsPath);
+		}
+	}));
+
+
+	subscriptions.push(commands.registerCommand('vcclinter.showLastErrorModel', function () {
+		linter.showErrorModel();
+	}));
+
+	subscriptions.push(commands.registerCommand('vcclinter.help', function () {
+		linter.help();
+	}));
 }

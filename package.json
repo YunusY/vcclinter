@@ -12,11 +12,15 @@
         "Linters"
     ],
     "activationEvents": [
-        "onCommand:extension.vccVerify",
-        "onCommand:extension.vccVerifyWithoutIncludes",
-        "onCommand:extension.vccVerifyThis",
-        "onCommand:extension.vccReVerify",
-        "onCommand:extension.vccCustomVerify"
+        "onCommand:vcclinter.verify",
+        "onCommand:vcclinter.verifyWithoutIncludes",
+        "onCommand:vcclinter.verifyThis",
+        "onCommand:vcclinter.reVerify",
+        "onCommand:vcclinter.customVerify",
+        "onCommand:vcclinter.showErrorModel",
+        "onCommand:vcclinter.showLastErrorModel",
+        "onCommand:vcclinter.help",
+        "onCommand:vcclinter.watch"
     ],
     "main": "./out/src/extension",
     "contributes": {
@@ -24,102 +28,198 @@
             "type": "object",
             "title": "VCClinter configuration",
             "properties": {
-                "vcclinter.usebvp": {
+                "vcclinter.defaultParameters": {
+                    "type": "array",
+                    "default": [
+                        "/bvd"
+                    ],
+                    "description": "A list of Parameters that you want to pass on every vcc call"
+                },
+                "vcclinter.vccPath": {
+                    "type": "string",
+                    "default": "vcc.exe",
+                    "description": "Path to VCC Binary (standard location : C:\\Program Files (x86)\\Microsoft Research\\Vcc\\Binaries\\vcc.exe)"
+                },
+                "vcclinter.bvdPath": {
+                    "type": "string",
+                    "default": "bvd.exe",
+                    "description": "Path to BVD Binary (standard location : C:\\Program Files (x86)\\Microsoft Research\\Vcc\\Binaries\\bvd.exe)"
+                },
+                "vcclinter.showZ3Inspector": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Enable to always show the Z3 Inspector after verifying"
+                },
+                "vcclinter.saveBeforeVerify": {
                     "type": "boolean",
                     "default": true,
-                    "description": "create counter example for boogie verification debugger"
+                    "description": "Enable to always save the file before you verify"
                 }
             }
         },
+        "languages": [
+            {
+                "id": "bvdmodel",
+                "extensions": [
+                    ".model"
+                ],
+                "aliases": [
+                    "BVD Model"
+                ],
+                "firstLine": "*** MODddEL"
+            }
+        ],
         "menus": {
+            "explorer/context": [
+                {
+                    "command": "vcclinter.showErrorModel",
+                    "when": "resourceLangId == bvdmodel",
+                    "group": "0_acc@1"
+                }
+            ],
             "editor/context": [
                 {
-                    "command": "extension.vccVerify",
-                    "when": "resourceLangId == c",
+                    "command": "vcclinter.verify",
+                    "when": "resourceLangId == c && editorTextFocus",
                     "group": "0_vcc@1"
                 },
                 {
-                    "command": "extension.vccVerifyWithoutIncludes",
+                    "command": "vcclinter.verifyWithoutIncludes",
                     "when": "resourceLangId == c",
                     "group": "0_vcc@2"
                 },
                 {
-                    "command": "extension.vccVerifyThis",
+                    "command": "vcclinter.verifyThis",
                     "when": "resourceLangId == c",
                     "group": "0_vcc@3"
                 },
                 {
-                    "command": "extension.vccReVerify",
+                    "command": "vcclinter.reVerify",
                     "when": "resourceLangId == c",
                     "group": "0_vcc@4"
                 },
                 {
-                    "command": "extension.vccCustomVerify",
+                    "command": "vcclinter.customVerify",
                     "when": "resourceLangId == c",
                     "group": "0_vcc@5"
                 },
-               {
-                    "command": "extension.vccVerify",
+                {
+                    "command": "vcclinter.showLastErrorModel",
+                    "when": "resourceLangId == c",
+                    "group": "0_vcc@6"
+                },
+                {
+                    "command": "vcclinter.verify",
                     "when": "resourceLangId == cpp",
                     "group": "0_vcc@1"
                 },
                 {
-                    "command": "extension.vccVerifyWithoutIncludes",
+                    "command": "vcclinter.verifyWithoutIncludes",
                     "when": "resourceLangId == cpp",
                     "group": "0_vcc@2"
                 },
                 {
-                    "command": "extension.vccVerifyThis",
+                    "command": "vcclinter.verifyThis",
                     "when": "resourceLangId == cpp",
                     "group": "0_vcc@3"
                 },
                 {
-                    "command": "extension.vccReVerify",
+                    "command": "vcclinter.reVerify",
                     "when": "resourceLangId == cpp",
                     "group": "0_vcc@4"
                 },
                 {
-                    "command": "extension.vccCustomVerify",
+                    "command": "vcclinter.customVerify",
                     "when": "resourceLangId == cpp",
                     "group": "0_vcc@5"
+                },
+                {
+                    "command": "vcclinter.showLastErrorModel",
+                    "when": "resourceLangId == cpp",
+                    "group": "0_vcc@6"
                 }
             ]
         },
         "keybindings": [
             {
-                "command": "extension.vccVerify",
-                "key": "ctrl+f1",
+                "command": "vcclinter.verify",
+                "key": "alt+v alt+f",
                 "when": "editorTextFocus"
+            },
+            {
+                "command": "vcclinter.verifyWithoutIncludes",
+                "key": "alt+v alt+i",
+                "when": "editorTextFocus"
+            },
+            {
+                "command": "vcclinter.verifyThis",
+                "key": "alt+v alt+t",
+                "when": "editorTextFocus"
+            },
+            {
+                "command": "vcclinter.reVerify",
+                "key": "alt+v alt+r",
+                "when": "editorTextFocus"
+            },
+            {
+                "command": "vcclinter.customVerify",
+                "key": "alt+v alt+b",
+                "when": "editorTextFocus"
+            },
+            {
+                "command": "vcclinter.showLastErrorModel",
+                "key": "alt+v alt+e",
+                "when": "editorTextFocus"
+            },
+            {
+                "command": "vcclinter.cancel",
+                "key": "alt+v alt+c"
             }
         ],
         "commands": [
             {
-                "command": "extension.vccVerify",
+                "command": "vcclinter.verify",
                 "title": "VCC Verify"
             },
-             {
-                "command": "extension.vccVerifyWithoutIncludes",
+            {
+                "command": "vcclinter.showErrorModel",
+                "title": "Show Error Model"
+            },
+            {
+                "command": "vcclinter.showLastErrorModel",
+                "title": "Show Last Error Model"
+            },
+            {
+                "command": "vcclinter.verifyWithoutIncludes",
                 "title": "VCC Verify without includes"
             },
             {
-                "command": "extension.vccVerifyThis",
+                "command": "vcclinter.verifyThis",
                 "title": "VCC Verify This"
             },
             {
-                "command": "extension.vccReVerify",
+                "command": "vcclinter.reVerify",
                 "title": "VCC Re-Verify"
             },
             {
-                "command": "extension.vccCustomVerify",
+                "command": "vcclinter.customVerify",
                 "title": "VCC Custom Verify"
             },
             {
-                "command": "extension.vccWatch",
+                "command": "vcclinter.cancel",
+                "title": "VCC Cancel"
+            },
+            {
+                "command": "vcclinter.watch",
                 "title": "VCC Watch"
             },
             {
-                "command": "extension.vccWatchStop",
+                "command": "vcclinter.watchStop",
                 "title": "VCC Watch Stop"
+            },
+            {
+                "command": "vcclinter.help",
+                "title": "VCC Help"
             }
         ]
     },
