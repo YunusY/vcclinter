@@ -1,13 +1,13 @@
 import { workspace, commands, window, InputBoxOptions, ExtensionContext, Disposable } from 'vscode';
 
-import VCCLintingProvider from './features/vccLintProvider';
+import VCCLinter from './vccLinter';
 
 export function activate(context: ExtensionContext) {
-	let linter = new VCCLintingProvider(context.subscriptions);
+	let linter = new VCCLinter(context.subscriptions);
 	registerCommandListeners(linter, context.subscriptions);
 }
 
-function registerCommandListeners(linter: VCCLintingProvider, subscriptions: Disposable[]) {
+function registerCommandListeners(linter: VCCLinter, subscriptions: Disposable[]) {
 	subscriptions.push(commands.registerCommand('vcclinter.verify', function () {
 		linter.checkAutoSaveAndVerify([''])
 	}));

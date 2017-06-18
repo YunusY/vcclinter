@@ -6,7 +6,7 @@ import ChildProcess = cp.ChildProcess;
 
 import * as vscode from 'vscode';
 
-export default class VCCLintingProvider {
+export default class VCCLinter {
 
 	private diagnosticCollection: vscode.DiagnosticCollection;
 	private outputChannel: vscode.OutputChannel;
@@ -204,38 +204,43 @@ export default class VCCLintingProvider {
 					console.log(message);
 					this.outputChannel.append(message);
 
-					let regex = new RegExp("(.*?)\\(([0-9]+),([0-9]+)\\)\\s:\\serror\\s.*?:(\\s.*'(.*)'.*)|(\\(Location of symbol related to previous error.\\))")
+					let regex = new RegExp("(.*?)\\((?:([0-9]+)|([0-9]+),([0-9]+))\\)\\s:\\serror\\s.*?:(?:(\\s.*'(.*)'.*)|(\\(Location of symbol related to previous error.\\))|(.+))")
+   				//  let regex = new RegExp("(.*?)\\(([0-9]+),([0-9]+)\\)\\s:\\serror\\s.*?:(\\s.*'(.*)'.*)|(\\(Location of symbol related to previous error.\\))")
+
 					// 1 - path
-					// 2 - row
-					// 3 - col
-					// 4 - possible errormessage
-					// 5 - possible errorword
-					// 6 - other possible errormessage
+					// 2/3 - row
+					// 4 - col
+					// 5 - possible errormessage
+					// 6 - possible errorword
+					// 7 - other possible errormessage
+					// 8 - unknown error message
 					let result = regex.exec(message);
 					if (result == null || result[1].replace(/^.*[\\\/]/, '') != filename) {
 						return;
 					}
 					console.log(result);
 					let relevant = message.substr(message.indexOf(filename) + filename.length + 1);
-					let row = result[2];
-					let column = result[3];
-					let err = result[4] ? result[4] : result[6];
-					let errword = result[5];
+					let row = result[2] || result[3];
+					let column = result[4];
+					let errmsg = result[5] || result[7] || result[8];
+					let errword = result[6];
 					let position = new vscode.Position(+row - 1, +column - 1);
 					let range = null;
 					let text = "";
+					//try finding error word at given position
 					if (errword != null) {
 						range = new vscode.Range(+row - 1, +column - 1, +row - 1, +column + errword.length - 1);
 						text = textDocument.getText(range)
 					}
 
-					if (errword == null || text != errword) {
+					//try finding any word at given position if error word is not found
+					if (text != errword) {
 						range = textDocument.getWordRangeAtPosition(position);
 						if (range == null) {
 							range = new vscode.Range(+row - 1, +column - 1, +row - 1, +column)
 						}
 					}
-					let errmsg = err.substr(err.indexOf(":") + 2);
+					
 					let severity = vscode.DiagnosticSeverity.Warning;
 
 					let diagnostic = new vscode.Diagnostic(range, errmsg, severity);
