@@ -18,7 +18,7 @@ export default class VCCLinter {
 	private childProcess: cp.ChildProcess;
 
 	constructor(subscriptions: vscode.Disposable[]) {
-		subscriptions.push(this);
+		// subscriptions.push(this);
 		this.diagnosticCollection = vscode.languages.createDiagnosticCollection();
 		this.outputChannel = vscode.window.createOutputChannel("VCC");
 		vscode.workspace.onDidChangeConfiguration(this.loadConfig, this, subscriptions);
@@ -26,7 +26,8 @@ export default class VCCLinter {
 	}
 
 	public cancel() {
-		this.childProcess.kill();
+		if(this.childProcess)
+			this.childProcess.kill();
 		this.lock = false;
 	}
 
@@ -203,9 +204,9 @@ export default class VCCLinter {
 				messages.forEach(message => {
 					console.log(message);
 					this.outputChannel.append(message);
+					//  let oldregex = new RegExp("(.*?)\\(([0-9]+),([0-9]+)\\)\\s:\\serror\\s.*?:(\\s.*'(.*)'.*)|(\\(Location of symbol related to previous error.\\))")
 
 					let regex = new RegExp("(.*?)\\((?:([0-9]+)|([0-9]+),([0-9]+))\\)\\s:\\serror\\s.*?:(?:(\\s.*'(.*)'.*)|(\\(Location of symbol related to previous error.\\))|(.+))")
-   				//  let regex = new RegExp("(.*?)\\(([0-9]+),([0-9]+)\\)\\s:\\serror\\s.*?:(\\s.*'(.*)'.*)|(\\(Location of symbol related to previous error.\\))")
 
 					// 1 - path
 					// 2/3 - row
@@ -214,6 +215,7 @@ export default class VCCLinter {
 					// 6 - possible errorword
 					// 7 - other possible errormessage
 					// 8 - unknown error message
+
 					let result = regex.exec(message);
 					if (result == null || result[1].replace(/^.*[\\\/]/, '') != filename) {
 						return;
@@ -240,7 +242,7 @@ export default class VCCLinter {
 							range = new vscode.Range(+row - 1, +column - 1, +row - 1, +column)
 						}
 					}
-					
+
 					let severity = vscode.DiagnosticSeverity.Warning;
 
 					let diagnostic = new vscode.Diagnostic(range, errmsg, severity);
