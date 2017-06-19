@@ -2,7 +2,7 @@
     "name": "vcclinter",
     "displayName": "vcclinter",
     "description": "",
-    "version": "0.0.1",
+    "version": "0.0.3",
     "publisher": "yunusyueksektepe",
     "engines": {
         "vscode": "^1.10.0"
@@ -20,7 +20,8 @@
         "onCommand:vcclinter.showErrorModel",
         "onCommand:vcclinter.showLastErrorModel",
         "onCommand:vcclinter.help",
-        "onCommand:vcclinter.watch"
+        "onCommand:vcclinter.watch",
+        "onCommand:vcclinter.cancel"
     ],
     "main": "./out/src/extension",
     "contributes": {
